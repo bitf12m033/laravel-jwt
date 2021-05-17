@@ -22,6 +22,7 @@ class CreatePaymentsTable extends Migration
             $table->string('cvc')->nullable();
             $table->float('amount');
             $table->foreignId('user_id');
+            $table->string('charge_id');
             $table->timestamps();
         });
     }

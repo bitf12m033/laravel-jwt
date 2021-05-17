@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Stripe\Stripe;
+
+use Carbon\Carbon;
 class PaymentController extends Controller
 {
     /**
@@ -41,24 +44,55 @@ class PaymentController extends Controller
         if($validator->fails()){
             return response($validator->errors()->toJson(),422);
         }
-
-        $payment = Payment::create([
-            'card_number' => $request->get('card_number'),
-            'card_holder' => $request->get('card_holder'),
-            'expiry' => $request->get('expiry'),
-            'cvc' => $request->get('cvc'),
-            'amount' => $request->get('amount'),
-            'user_id' => $request->get('user_id'),
-        ]);
-       if($payment)
-       {
-           $response = array('message'=>'Transaction completed');
-       }
-       else{
-        $response = array('message'=>'Transaction Failed');
-       }
+        // dd(Carbon::createFromFormat('m/Y', $request->get('expiry'))->format('y'));
+        // dd(Carbon::parse($request->get('expiry')));
+        // $stripe = Stripe::setApiKey(env('STRIPE_SECRET'));
+        $stripe = new \Stripe\StripeClient("sk_test_51Hj1kEHRx3JYEuNl1pkemrm5zNLA5TzMBj6lIiMzrZSU6bV5XJpXzHDaunnU8hWZoOkA4QHrXPrmXDQvWXCeIziy00vfANyJUM");
+        // dd($stripe);
+        try
+        {
+            $token = $stripe->tokens->create([
+                'card' => [
+                'number' => $request->get('card_number'),
+                'exp_month' =>Carbon::createFromFormat('m/Y', $request->get('expiry'))->format('m'),
+                'exp_year' => Carbon::createFromFormat('m/Y', $request->get('expiry'))->format('y'),
+                'cvc' => $request->get('cvc'),
+                ],
+            ]);
+                // dd($token["id"]);
+            if (!isset($token['id'])) {
+                return response('Token not created',422);
+            }
+            $charge = $stripe->charges->create([
+                'card' => $token['id'],
+                'currency' => 'USD',
+                'amount' => $request->get('amount'),
+                'description' => 'wallet',
+            ]);
+            
+            $payment = Payment::create([
+                'card_number' => $request->get('card_number'),
+                'card_holder' => $request->get('card_holder'),
+                'expiry' => $request->get('expiry'),
+                'cvc' => $request->get('cvc'),
+                'amount' => $request->get('amount'),
+                'user_id' => $request->get('user_id'),
+                'charge_id' => $charge->id,
+            ]);
+           if($payment)
+           {
+               $response = array('message'=>'Transaction completed');
+           }
+           else{
+            $response = array('message'=>'Transaction Failed');
+           }
+           
+            return response()->json(compact('payment','response'),201);
+        }
+        catch (Exception $e) {
+        }
+        
        
-        return response()->json(compact('payment','response'),201);
     }
     /**
      * Display the specified resource.

@@ -13,6 +13,6 @@ class Payment extends Eloquent
     protected $collection = 'payments';
     // protected $primaryKey = 'id';
     protected $fillable = [
-        'card_number','expiry', 'cvc','card_holder','user_id','amount'
+        'card_number','expiry', 'cvc','card_holder','user_id','amount','charge_id'
     ];
 }

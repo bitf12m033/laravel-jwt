@@ -12,6 +12,7 @@
         "jenssegers/mongodb": "^3.8",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
+        "stripe/stripe-php": "^7.78",
         "tymon/jwt-auth": "dev-develop"
     },
     "require-dev": {
